@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum BusinessType {
+  MCHJ
+  YTT
+  SELF_EMPLOYED 
+}
+
 enum UserRole {
   MASTER
   USER
@@ -14,26 +20,25 @@ enum UserRole {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  firstName    String
-  lastName     String
-  phone        String   @unique
-  password     String
-  role         UserRole @default(USER)
-  add_address  String?
-  rates        Rating[]
-  files        Files[]
-  profession   String?
-  region       String?
-  district     String?
-  masterOrders Orders[] @relation("MasterOrders")
-  clientOrders Orders[] @relation("ClientOrders")
-  marketplaceOrders Order[] @relation("MarketplaceOrders")
-  wishlist    Wishlist[]
-  cart        Cart[]
-  createdAt    DateTime @default(now())
-  busyMasters BusyMasters[]
-
+  id                String        @id @default(uuid())
+  firstName         String
+  lastName          String
+  phone             String        @unique
+  password          String
+  role              UserRole      @default(USER)
+  add_address       String?
+  rates             Rating[]
+  files             Files[]
+  profession        String?
+  region            String?
+  district          String?
+  masterOrders      Orders[]      @relation("MasterOrders")
+  clientOrders      Orders[]      @relation("ClientOrders")
+  marketplaceOrders Order[]       @relation("MarketplaceOrders")
+  wishlist          Wishlist[]
+  cart              Cart[]
+  createdAt         DateTime      @default(now())
+  busyMasters       BusyMasters[]
 
   @@map("users")
 }
@@ -52,16 +57,14 @@ model Files {
 model Orders {
   id String @id @default(ulid())
 
-  masterId String?
-  master   User?   @relation("MasterOrders", fields: [masterId], references: [id], onDelete: SetNull)
-  clientId String?
-  client   User?   @relation("ClientOrders", fields: [clientId], references: [id], onDelete: SetNull)
-  address String
+  masterId    String?
+  master      User?   @relation("MasterOrders", fields: [masterId], references: [id], onDelete: SetNull)
+  clientId    String?
+  client      User?   @relation("ClientOrders", fields: [clientId], references: [id], onDelete: SetNull)
+  address     String
   description String
 
   @@map("orders")
-
-
 }
 
 model Rating {
@@ -71,106 +74,123 @@ model Rating {
   userId    String
   user      User     @relation(references: [id], fields: [userId])
   createdAt DateTime @default(now())
-} 
+}
 
-  model BusyMasters {
+model BusyMasters {
+  id        String   @id @default(ulid())
+  masterId  String
+  startTime DateTime
+  endTime   DateTime
+  isBusy    Boolean  @default(true)
+  master    User     @relation(references: [id], fields: [masterId], onDelete: Cascade)
 
-    id      String   @id @default(ulid())
-    masterId String
-    startTime DateTime
-    endTime   DateTime
-    isBusy    Boolean  @default(true)
-    master  User     @relation(references: [id], fields: [masterId], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
 
-    createdAt DateTime @default(now())
+model Advert {
+  id         Int     @id @default(autoincrement())
+  text       String
+  serverLink String
+  photoUrl   String?
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+model Shop {
+  id          String  @id @default(uuid())
+  name        String
+  region      String
+  tuman       String
+  logo        String?
+  phoneNumber String
+  password    String
+  rePassword  String
+   
+  businessType BusinessType 
+  createdAt    DateTime     @default(now())
+
+  products Product[]
+
+  @@map("shops")
+}
 
 
-  }
 
-  model Advert {
+model ProductCategory {
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
 
-    id Int @id @default(autoincrement())
-    text String
-    serverLink String
-    photoUrl String?
+  @@map("product_categories")
+}
 
+model Product {
+  id           String  @id @default(uuid())
+  name         String
+  description  String
+  price        Float
+  oldPrice     Float?
+  rating       Float   @default(0)
+  reviewsCount Int     @default(0)
+  imageUrl     String
+  sizes        Json?
+  isTop        Boolean @default(false)
 
-  }
+  categoryId String
+  category   ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  enum OrderStatus {
-    PENDING
-    PROCESSING
-    COMPLETED
-    CANCELLED
-  }
+  shopId String
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
-  model Shop {
-    id        String    @id @default(uuid())
-    name      String
-    region    String
-    logo      String?
-    products  Product[]
-    createdAt DateTime  @default(now())
+  orders   Order[]
+  wishlist Wishlist[]
+  cart     Cart[]
 
-    @@map("shops")
-  }
+  createdAt DateTime @default(now())
 
-  model Product {
-    id          String    @id @default(uuid())
-    name        String
-    description String
-    price       Float
-    oldPrice    Float?
-    rating      Float     @default(0)
-    reviewsCount Int      @default(0)
-    imageUrl    String
-    sizes       Json?
-    isTop       Boolean   @default(false)
-    shopId      String
-    shop        Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-    orders      Order[]
-    wishlist    Wishlist[]
-    cart        Cart[]
-    createdAt   DateTime  @default(now())
+  @@map("products")
+}
 
-    @@map("products")
-  }
+model Order {
+  id         String      @id @default(uuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User        @relation("MarketplaceOrders", fields: [userId], references: [id], onDelete: Cascade)
+  totalPrice Float
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
 
-  model Order {
-    id         String      @id @default(uuid())
-    productId  String
-    product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-    userId     String
-    user       User        @relation("MarketplaceOrders", fields: [userId], references: [id], onDelete: Cascade)
-    totalPrice Float
-    status     OrderStatus @default(PENDING)
-    createdAt  DateTime   @default(now())
+  @@map("marketplace_orders")
+}
 
-    @@map("marketplace_orders")
-  }
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
-  model Wishlist {
-    id        String   @id @default(uuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    productId String
-    product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-    createdAt DateTime @default(now())
+  @@unique([userId, productId])
+  @@map("wishlist")
+}
 
-    @@unique([userId, productId])
-    @@map("wishlist")
-  }
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  model Cart {
-    id        String   @id @default(uuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    productId String
-    product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-    quantity  Int      @default(1)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@unique([userId, productId])
-    @@map("cart")
-  }
+  @@unique([userId, productId])
+  @@map("cart")
+}

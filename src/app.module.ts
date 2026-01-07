@@ -13,6 +13,8 @@ import { AdvertModule } from './modules/advert/advert.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ProductCategoryModule } from './modules/product-category/product-category.module';
+import { ShopModule } from './modules/shop/shop.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { join } from 'path';
     AdminModule,
     AdvertModule,
     MarketplaceModule,
+    ProductCategoryModule,
+    ShopModule,
   ]
 
 

@@ -36,6 +36,7 @@ export class MarketplaceService {
           sizes: dto.sizes ?? null,
           isTop: dto.isTop ?? false,
           shopId: dto.shopId,
+          categoryId: dto.categoryId,
         },
         include: {
           shop: true,

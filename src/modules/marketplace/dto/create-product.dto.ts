@@ -61,5 +61,10 @@ export class CreateProductDto {
   @IsUUID()
   @IsNotEmpty()
   shopId: string;
+
+  @ApiProperty({ description: 'Category ID', example: 'uuid-shop' })
+  @IsUUID()
+  @IsNotEmpty()
+  categoryId: string;
 }
 
